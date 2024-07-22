@@ -1,4 +1,5 @@
 from itertools import chain
+from pprint import pprint
 
 class Cell:
     def __init__(self):
@@ -15,38 +16,46 @@ class Board:
     """
     3x3 board that holds moves
     """
-    def __init__(self) -> None:
-        self.board = [[' ' for _ in range(3)] for _ in range(3)]
+    def __init__(self, dim=3) -> None:
+        self.dim = dim
+        self.board = [[' ' for _ in range(dim)] for _ in range(dim)]
         self.cell_width = 3
+        self.hpadding = 10
+        self.max_len = self.cell_width * dim + (dim - 1) + 2 * self.hpadding
 
     def __repr__(self):
-        repr = ''
+        repr = '\n'
+        repr += '~~ TIC-TAC-TOE ~~'.center(self.max_len) + '\n\n'
         for i, row in enumerate(self.board):
-            repr += ' ' + ' | '.join(row) + '\n'
-            if i < 2:
-                repr += ("-"*(self.cell_width) + '+')*2 + "-"*(self.cell_width)+ '\n'
+            repr += (' | '.join(row)).center(self.max_len) + '\n'
+            if i < self.dim - 1:
+                repr += (("-"*(self.cell_width) + '+')*(self.dim - 1) + "-"*(self.cell_width)).center(self.max_len)
+                repr += '\n'
 
         return repr
 
+    def get_horizontals(self):
+        horizontals = [[(r, c) for r in range(self.dim)] for c in range(self.dim)]
+        return horizontals
+
+    def get_verticals(self):
+        verticals = [[(r, c) for c in range(self.dim)] for r in range(self.dim)]
+        return verticals
+
+    def get_diagonals(self):
+        diagonals = []
+        diagonals.append([(i, i) for i in range(self.dim)])
+        diagonals.append([(i, self.dim - i - 1) for i in range(self.dim - 1, -1, -1)])
+        return diagonals
+
     def is_winner(self, player):
+        horizontals = self.get_horizontals()
+        verticals = self.get_verticals()
+        diagonals = self.get_diagonals()
+        winners = [*horizontals, *verticals, *diagonals]
 
-        assert player in {"X", "O"}, 'player must be in {"X", "O"}'
-
-        winning_indices = [
-            [(0, 0), (0, 1), (0, 2)],   # First row
-            [(1, 0), (1, 1), (1, 2)],   # Second row
-            [(2, 0), (2, 1), (2, 2)],   # Third row
-
-            [(0, 0), (1, 1), (2, 2)],   # Diagonal from top left to bottom right
-            [(2, 0), (1, 1), (0, 2)],   # Diagonal from bottom left to top right
-
-            [(0, 0), (1, 0), (2, 0)],   # First column
-            [(0, 1), (1, 1), (2, 1)],   # Second column
-            [(0, 2), (1, 2), (2, 2)],   # Third column
-        ]
-
-        for idx in winning_indices:
-            if all([self.board[row][col] == player for row, col in idx]):
+        for winner in winners:
+            if all([self.board[row][col] == player for row, col in winner]):
                 return True
         return False
 
@@ -58,9 +67,14 @@ class Board:
         return None
 
     def is_valid_move(self, row, col):
-        if (row is None) or (col is None):
+        if isinstance(row, int) and isinstance(col, int):
+            if (row >= self.dim) or (col >= self.dim):
+                return False
+            elif self.board[row][col] == ' ':
+                return True
+            else:
+                return False
+        elif (row is None) or (col is None):
             return False
-        elif self.board[row][col] == ' ':
-            return True
         else:
             return False
